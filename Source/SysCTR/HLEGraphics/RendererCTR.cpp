@@ -44,122 +44,120 @@ void sceGuSetMatrix(int type, const ScePspFMatrix4 * mtx)
 
 static void InitBlenderMode()
 {
-	u32 cycle_type    = gRDPOtherMode.cycle_type;
-	u32 cvg_x_alpha   = gRDPOtherMode.cvg_x_alpha;
+	u32 cycle_type = gRDPOtherMode.cycle_type;
+	u32 cvg_x_alpha = gRDPOtherMode.cvg_x_alpha;
 	u32 alpha_cvg_sel = gRDPOtherMode.alpha_cvg_sel;
-	u32 blendmode     = gRDPOtherMode.blender;
+	u32 blendmode = gRDPOtherMode.blender;
 
 	// NB: If we're running in 1cycle mode, ignore the 2nd cycle.
-	u32 active_mode = (cycle_type == CYCLE_2CYCLE) ? blendmode : (blendmode & 0xcccc);
+	u32 active_mode = (cycle_type == CYCLE_2CYCLE) ? blendmode : (blendmode & 0xCCCC);
 
-	enum BlendType
-	{
-		kBlendModeOpaque,
-		kBlendModeAlphaTrans,
-		kBlendModeFade,
-	};
-	BlendType type = kBlendModeOpaque;
-
-	// FIXME(strmnnrmn): lots of these need fog!
+	if (alpha_cvg_sel && (gRDPOtherMode.L & 0x7000) != 0x7000) {
+		switch (active_mode) {
+		case 0x4055: // Mario Golf
+		case 0x5055: // Paper Mario Intro
+			glBlendFunc(GL_ZERO, GL_ONE);
+			glEnable(GL_BLEND);
+			break;
+		default:
+			glDisable(GL_BLEND);
+		}
+		return;
+	}
 
 	switch (active_mode)
 	{
-	case 0x0040: // In * AIn + Mem * 1-A
-		// MarioKart (spinning logo).
-		type = kBlendModeAlphaTrans;
-		break;
-	case 0x0050: // In * AIn + Mem * 1-A | In * AIn + Mem * 1-A
-		// Extreme-G.
-		type = kBlendModeAlphaTrans;
-		break;
-	case 0x0440: // In * AFog + Mem * 1-A
-		// Bomberman64. alpha_cvg_sel: 1 cvg_x_alpha: 1
-		type = kBlendModeAlphaTrans;
-		break;
-	case 0x04d0: // In * AFog + Fog * 1-A | In * AIn + Mem * 1-A
-		// Conker.
-		type = kBlendModeAlphaTrans;
-		break;
-	case 0x0150: // In * AIn + Mem * 1-A | In * AFog + Mem * 1-A
-		// Spiderman.
-		type = kBlendModeAlphaTrans;
-		break;
-	case 0x0c08: // In * 0 + In * 1
-		// MarioKart (spinning logo)
-		// This blend mode doesn't use the alpha value
-		type = kBlendModeOpaque;
-		break;
-	case 0x0c18: // In * 0 + In * 1 | In * AIn + Mem * 1-A
-		// StarFox main menu.
-		type = kBlendModeAlphaTrans;
-		break;
-	case 0x0c40: // In * 0 + Mem * 1-A
-		// Extreme-G.
-		type = kBlendModeFade;
-		break;
-	case 0x0f0a: // In * 0 + In * 1 | In * 0 + In * 1
-		// Zelda OoT.
-		type = kBlendModeOpaque;
-		break;
-	case 0x4c40: // Mem * 0 + Mem * 1-A
-		//Waverace - alpha_cvg_sel: 0 cvg_x_alpha: 1
-		type = kBlendModeFade;
-		break;
-	case 0x8410: // Bl * AFog + In * 1-A | In * AIn + Mem * 1-A
-		// Paper Mario.
-		type = kBlendModeAlphaTrans;
-		break;
-	case 0xc410: // Fog * AFog + In * 1-A | In * AIn + Mem * 1-A
-		// Donald Duck (Dust)
-		type = kBlendModeAlphaTrans;
-		break;
-	case 0xc440: // Fog * AFog + Mem * 1-A
-		// Banjo Kazooie
-		// Banjo Tooie sun glare
-		// FIXME: blends fog over existing?
-		type = kBlendModeAlphaTrans;
-		break;
-	case 0xc800: // Fog * AShade + In * 1-A
-		//Bomberman64. alpha_cvg_sel: 0 cvg_x_alpha: 1
-		type = kBlendModeOpaque;
-		break;
-	case 0xc810: // Fog * AShade + In * 1-A | In * AIn + Mem * 1-A
-		// AeroGauge (ingame)
-		type = kBlendModeAlphaTrans;
-		break;
-	// case 0x0321: // In * 0 + Bl * AMem
-	// 	// Hmm - not sure about what this is doing. Zelda OoT pause screen.
-	// 	type = kBlendModeAlphaTrans;
-	// 	break;
-
-	default:
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		DebugBlender( cycle_type, active_mode, alpha_cvg_sel, cvg_x_alpha );
-		DL_PF( "		 Blend: SRCALPHA/INVSRCALPHA (default: 0x%04x)", active_mode );
-#endif
-		break;
-	}
-
-	// NB: we only have alpha in the blender is alpha_cvg_sel is 0 or cvg_x_alpha is 1.
-	bool have_alpha = !alpha_cvg_sel || cvg_x_alpha;
-
-	if (type == kBlendModeAlphaTrans && !have_alpha)
-		type = kBlendModeOpaque;
-
-	switch (type)
-	{
-	case kBlendModeOpaque:
+	case 0x00C0: // ISS 64
+	case 0x0091: // Mace special blend mode
+	case 0x0302: // Bomberman 2 special blend mode
+	case 0x0382: // Mace objects
+	case 0x07C2: // ISS 64
+	case 0x0C08: // 1080 sky
+	case 0xC302: // ISS 64
+	case 0xC702: // Donald Duck: Quack Attack
+	case 0xC800: // Conker's Bad Fur Day
+	case 0x0F0A: // DK64 blueprints
+	case 0xA500: // Sin and Punishment
+	case 0xFA00: // Bomberman second attack
 		glDisable(GL_BLEND);
 		break;
-	case kBlendModeAlphaTrans:
-		glBlendEquation(GL_FUNC_ADD);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	case 0x55F0: // Bust-A-Move 3 DX
+		glBlendFunc(GL_ONE, GL_SRC_ALPHA);
 		glEnable(GL_BLEND);
 		break;
-	case kBlendModeFade:
-		glBlendEquation(GL_FUNC_ADD);
+	case 0x0F1A:
+		if (cycle_type == CYCLE_1CYCLE)
+			glDisable(GL_BLEND);
+		else {
+			glBlendFunc(GL_ZERO, GL_ONE);
+			glEnable(GL_BLEND);
+		}
+		break;
+	case 0x0448: // Space Invaders
+	case 0x0554:
+		glBlendFunc(GL_ONE, GL_ONE);
+		glEnable(GL_BLEND);
+		break;
+	case 0x0F5A: // Zelda: MM
+	case 0x0FA5: // OOT menu
+	case 0x5055: // Paper Mario intro
+	case 0xAF50: // Zelda: MM
+	case 0xC712: // Pokemon Stadium
+		glBlendFunc(GL_ZERO, GL_ONE);
+		glEnable(GL_BLEND);
+		break;
+	case 0x0C40: // Extreme-G
+	case 0x0C48: // Star Wars: Shadow of the Empire text and hud
+	case 0x4C40: // Wave Race
+	case 0x5F50:
 		glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_BLEND);
+		break;
+	case 0x0010: // Diddy Kong rare logo
+	case 0x0040: // F-Zero X
+	case 0x0050: // A Bug's Life
+	case 0x0051:
+	case 0x0055:
+	case 0x0150: // Spiderman
+	case 0x0321:
+	case 0x0440: // Bomberman 64
+	case 0x04D0: // Conker's Bad Fur Day
+	case 0x0550: // Bomberman 64
+	case 0x0C18: // StarFox 64 main menu
+	case 0x0F54: // Star Wars racers
+	case 0xC410: // Donald Duck: Quack Attack dust
+	case 0xC440: // Banjo-Kazooie / Banjo-Tooie
+	case 0xC810: // AeroGauge
+	case 0xCB02: // Doom 64 weapons
+	case 0x0D18:
+	case 0x8410: // Paper Mario
+	case 0xF550:
+		if (!(!alpha_cvg_sel || cvg_x_alpha)) glDisable(GL_BLEND);
+		else {
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glEnable(GL_BLEND);
+	}
+		break;
+	case 0xC912: // 40 Winks
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		glEnable(GL_BLEND);
+		break;
+	case 0x0C19:
+	case 0xC811:
+		glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
+		glEnable(GL_BLEND);
+		break;
+	case 0x5000: // V8 explosions
+		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+		glEnable(GL_BLEND);
+		break;
+	default:
+		//DBGConsole_Msg(0, "Uncommon blender mode: 0x%04X", active_mode);
+		if (!(!alpha_cvg_sel || cvg_x_alpha)) glDisable(GL_BLEND);
+		else {
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glEnable(GL_BLEND);
+		}
 		break;
 	}
 }
@@ -215,7 +213,6 @@ void RendererCTR::RestoreRenderStates()
 	
 	glEnable(GL_SCISSOR_TEST);
 	
-	glBlendEquation(GL_FUNC_ADD);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glDisable( GL_BLEND );
@@ -516,6 +513,16 @@ void RendererCTR::RenderUsingCurrentBlendMode(const float (&mat_project)[16], Da
 	if(cycle_mode < CYCLE_COPY && gRDPOtherMode.force_bl)
 	{
 		InitBlenderMode();
+	}
+	else if (gRDPOtherMode.clr_on_cvg)
+	{
+		if ((cycle_mode == CYCLE_1CYCLE && gRDPOtherMode.c1_m2a == 1) ||
+			(cycle_mode == CYCLE_2CYCLE && gRDPOtherMode.c2_m2a == 1)) {
+			glBlendFunc(GL_ZERO, GL_ONE);
+			glEnable(GL_BLEND);
+		}
+		else
+			glDisable(GL_BLEND);
 	}
 	else
 	{
