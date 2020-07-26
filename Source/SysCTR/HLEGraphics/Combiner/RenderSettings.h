@@ -35,7 +35,7 @@ struct DaedalusVtx;
 
 struct SRenderState
 {
-	DaedalusVtx *			Vertices;
+	c32 *			Vertices;
 	u32						NumVertices;
 	c32						PrimitiveColour;
 	c32						EnvironmentColour;

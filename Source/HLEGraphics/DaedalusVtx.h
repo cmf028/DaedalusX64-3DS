@@ -76,6 +76,14 @@ struct DaedalusVtx
     v3		Position {};
 };
 
+struct DaedalusVtxBuffer
+{
+	float* texture;
+	c32*   colour;
+	float* position;
+	int num_vertices;
+};
+
 DAEDALUS_STATIC_ASSERT( sizeof(DaedalusVtx) == 24 );
 
 #endif // HLEGRAPHICS_DAEDALUSVTX_H_

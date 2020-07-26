@@ -520,7 +520,7 @@ void BaseRenderer::FlushTris()
 	#ifdef DAEDALUS_ENABLE_ASSERTS
 	DAEDALUS_ASSERT( mNumIndices, "Call to FlushTris() with nothing to render" );
 	#endif
-	TempVerts temp_verts;
+	DaedalusVtxBuffer temp_verts;
 
 	// If any bit is set here it means we have to clip the trianlges since PSP HW clipping sux!
 #ifdef DAEDALUS_PSP
@@ -535,7 +535,7 @@ void BaseRenderer::FlushTris()
 	}
 
 	// No vertices to render? //Corn
-	if( temp_verts.Count == 0 )
+	if( temp_verts.num_vertices == 0 )
 	{
 		mNumIndices = 0;
 		mVtxClipFlagsUnion = 0;
@@ -570,7 +570,7 @@ void BaseRenderer::FlushTris()
 	#endif
 	//
 	//	Render out our vertices
-	RenderTriangles( temp_verts.Verts, temp_verts.Count, gRDPOtherMode.depth_source ? true : false );
+	RenderTriangles( &temp_verts, gRDPOtherMode.depth_source ? true : false );
 
 	mNumIndices = 0;
 	mVtxClipFlagsUnion = 0;
@@ -850,15 +850,17 @@ void BaseRenderer::PrepareTrisClipped( TempVerts * temp_verts ) const
 
 
 //
-
-void BaseRenderer::PrepareTrisUnclipped( TempVerts * temp_verts ) const
+extern float    *gVertexBuffer;
+extern uint32_t *gColorBuffer;
+extern float    *gTexCoordBuffer;
+void BaseRenderer::PrepareTrisUnclipped( DaedalusVtxBuffer * temp_verts ) const
 {
 	DAEDALUS_PROFILE( "BaseRenderer::PrepareTrisUnclipped" );
 	#ifdef DAEDALUS_ENABLE_ASSERTS
 	DAEDALUS_ASSERT( mNumIndices > 0, "The number of indices should have been checked" );
 	#endif
 	const u32		num_vertices = mNumIndices;
-	DaedalusVtx *	p_vertices   = temp_verts->Alloc(num_vertices);
+	//DaedalusVtx *	p_vertices   = temp_verts->Alloc(num_vertices);
 
 	//
 	//	Previously this code set up an index buffer to avoid processing the
@@ -875,7 +877,7 @@ void BaseRenderer::PrepareTrisUnclipped( TempVerts * temp_verts ) const
 	//
 	//	Now we just shuffle all the data across directly (potentially duplicating verts)
 	//
-	for( u32 i {}; i < num_vertices; ++i )
+	/*for( u32 i {}; i < num_vertices; ++i )
 	{
 		u32 index = mIndexBuffer[ i ];
 
@@ -884,6 +886,28 @@ void BaseRenderer::PrepareTrisUnclipped( TempVerts * temp_verts ) const
 		p_vertices[ i ].Position.x = mVtxProjected[ index ].TransformedPos.x;
 		p_vertices[ i ].Position.y = mVtxProjected[ index ].TransformedPos.y;
 		p_vertices[ i ].Position.z = mVtxProjected[ index ].TransformedPos.z;
+	}*/
+	
+	
+	temp_verts->num_vertices= num_vertices;
+	temp_verts->position = gVertexBuffer;
+	temp_verts->texture  = gTexCoordBuffer;
+	temp_verts->colour    = (c32*)gColorBuffer;
+	for (uint32_t i = 0; i < num_vertices; i++)
+	{
+		u32 index = mIndexBuffer[ i ];
+		gVertexBuffer[0] = mVtxProjected[ index ].TransformedPos.x;
+		gVertexBuffer[1] = mVtxProjected[ index ].TransformedPos.y;
+		gVertexBuffer[2] = mVtxProjected[ index ].TransformedPos.z;
+		
+		gTexCoordBuffer[0] = mVtxProjected[ index ].Texture.x;
+		gTexCoordBuffer[1] = mVtxProjected[ index ].Texture.y;
+
+		gColorBuffer[0] = c32(mVtxProjected[ index ].Colour).GetColour();
+
+		gVertexBuffer += 3;
+		gTexCoordBuffer += 2;
+		gColorBuffer += 1;
 	}
  #endif
 }

@@ -388,7 +388,7 @@ protected:
 		answ.y = roundf( roundf( n64_coords.y ) * mN64ToScreenScale.y );
 	}
 
-	virtual void		RenderTriangles( DaedalusVtx * p_vertices, u32 num_vertices, bool disable_zbuffer ) = 0;
+	virtual void		RenderTriangles( DaedalusVtxBuffer * p_vertices, bool disable_zbuffer ) = 0;
 
 	void 				TestVFPUVerts( u32 v0, u32 num, const FiddledVtx * verts, const Matrix4x4 & mat_world );
 	template< bool FogEnable, int TextureMode >
@@ -396,7 +396,7 @@ protected:
 
 
 	void				PrepareTrisClipped( TempVerts * temp_verts ) const;
-	void				PrepareTrisUnclipped( TempVerts * temp_verts ) const;
+	void				PrepareTrisUnclipped( DaedalusVtxBuffer * temp_verts ) const;
 
 	v3					LightVert( const v3 & norm ) const;
 	v3					LightPointVert( const v4 & w ) const;
