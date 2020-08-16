@@ -73,6 +73,10 @@ static void AudioInit()
 	ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16);
 	ndspChnSetRate(0, 44100.0f);
 
+	// need to memset these, otherwise the dsp won't execute the callback when audio is disabled, then enabled
+	memset(&waveBuf[0], 0, sizeof(waveBuf[0]));
+	memset(&waveBuf[1], 0, sizeof(waveBuf[1]));
+	
 	waveBuf[0].data_vaddr = linearAlloc(CTR_NUM_SAMPLES * 4);
 	waveBuf[0].nsamples = CTR_NUM_SAMPLES;
 	waveBuf[1].data_vaddr = linearAlloc(CTR_NUM_SAMPLES * 4);

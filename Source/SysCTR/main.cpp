@@ -77,6 +77,8 @@ static void Initialize()
 	
 	APT_CheckNew3DS(&isN3DS);
 	osSetSpeedupEnable(true);
+	// only the N3DS supports async audio
+	enable_audio = isN3DS ? APM_ENABLED_ASYNC : APM_ENABLED_SYNC;
 
 	gfxInit(GSP_BGR8_OES, GSP_BGR8_OES, true);
 	//gfxSet3D(true);

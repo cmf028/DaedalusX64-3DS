@@ -110,20 +110,38 @@ static void DrawConfirmPage()
 	
 }
 
+extern bool isN3DS;
+
 static void DrawOptionsPage()
 {
 	static uint32_t frameskip = 0;
 
 	char frameskipString[30];
 
+	const char* audioString[] = {
+		"Audio Disabled",
+		"Audio Async",
+		"Audio Sync"
+	};
+	
 	sprintf(frameskipString, "Frameskip: %s", Preferences_GetFrameskipDescription( (EFrameskipValue)frameskip ));
 
 	UI::DrawHeader("Options");
 
-	if(UI::DrawToggle(10,  22, 145, 62, "Toggle Audio", gAudioPluginEnabled == APM_ENABLED_ASYNC))
+	if(UI::DrawButton(10,  22, 145, 62, audioString[gAudioPluginEnabled]))
 	{
-		gAudioPluginEnabled = (gAudioPluginEnabled == APM_ENABLED_ASYNC ? APM_DISABLED : APM_ENABLED_ASYNC);
-		gSpeedSyncEnabled   = (gAudioPluginEnabled == APM_ENABLED_ASYNC ? false : true);
+		if (gAudioPluginEnabled == APM_DISABLED)
+		{
+			gAudioPluginEnabled = isN3DS ? APM_ENABLED_ASYNC : APM_ENABLED_SYNC;
+		}
+		else if (gAudioPluginEnabled == APM_ENABLED_ASYNC)
+		{
+			gAudioPluginEnabled = APM_ENABLED_SYNC;
+		}
+		else
+		{
+			gAudioPluginEnabled = APM_DISABLED;
+		}
 	}
 
 	if(UI::DrawButton(165,  22, 145, 62, "Aspect Ratio"))

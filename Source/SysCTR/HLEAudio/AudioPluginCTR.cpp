@@ -57,7 +57,9 @@ static void asyncProcess(void *arg)
 	while(_runThread)
 	{
 		svcWaitSynchronization(audioRequest, U64_MAX);
-		if(_runThread) Audio_Ucode();
+		if(_runThread) {
+			Audio_Ucode();
+		}
 	}
 }
 
@@ -188,11 +190,18 @@ EProcessResult	CAudioPluginCTR::ProcessAList()
 			result = PR_COMPLETED;
 			break;
 		case APM_ENABLED_ASYNC:
-			if(isN3DS)
+			if (isN3DS)
+			{
 				svcSignalEvent(audioRequest);
+				// PSP async audio adds this event on the current thread after signaling the ME
+				CPU_AddEvent(RSP_AUDIO_INTR_CYCLES, CPU_EVENT_AUDIO);
+				result = PR_STARTED;
+			}
 			else
+			{
 				Audio_Ucode();
-			result = PR_COMPLETED;
+				result = PR_COMPLETED;
+			}
 			break;
 		case APM_ENABLED_SYNC:
 			Audio_Ucode();
